@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Tracking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom font and base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Custom colors matching the user's design */
+        :root {
+            --color-primary: 67 24 90; /* Violet 900 for dark text/elements */
+            --color-accent: 79 70 229;  /* Indigo 600 for main title */
+            --color-cyan: 6 182 212;   /* Cyan 500 for main button */
+            --color-pink: 236 72 153;  /* Pink 500 for clear button */
+            --color-bg-light: 249 250 251; /* Gray 50 */
+            --color-bg-card: 255 255 255; /* White */
+        }
+        .dark {
+            --color-primary: 255 255 255; /* White */
+            --color-accent: 199 210 254; /* Indigo 200 */
+            --color-bg-light: 17 24 39;  /* Gray 900 */
+            --color-bg-card: 31 41 55;   /* Gray 800 */
+        }
+        .text-primary { color: rgb(var(--color-primary)); }
+        .bg-page { background-color: rgb(var(--color-bg-light)); }
+        .bg-card { background-color: rgb(var(--color-bg-card)); }
+        
+        /* Schedule Page Specific Styles */
+        .header-bg { background-color: #6D28D9; /* Violet 700 */ }
+        .city-ordinary {
+            color: #C084FC; /* Violet 400 */
+            border: 1px solid #C084FC;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--color-bg-light); }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--color-primary), 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--color-primary), 0.5); }
+        
+        /* Autocomplete Styles */
+        .autocomplete-suggestions {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+        .suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .suggestion-item:hover {
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        .dark .suggestion-item:hover {
+            background-color: #374151; /* Tailwind gray-700 */
+        }
+        .suggestion-item-name {
+            font-weight: 600;
+            color: #111827; /* Tailwind gray-900 */
+        }
+        .dark .suggestion-item-name {
+            color: #f9fafb; /* Tailwind gray-50 */
+        }
+        .suggestion-item-details {
+            font-size: 0.8rem;
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+        .dark .suggestion-item-details {
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+
+        /* Custom style to make the select element look like a button */
+        .select-button-style {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: rgb(var(--color-cyan)) !important;
+            color: white !important;
+            font-weight: 700;
+            border: none !important;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.4), 0 2px 4px -2px rgba(6, 182, 212, 0.4);
+            padding-right: 2.5rem !important;
+            transition: background-color 0.15s, transform 0.15s;
+            cursor: pointer;
+            background-image: linear-gradient(to right, rgb(6 182 212) 0%, rgb(8 145 178) 100%) !important;
+        }
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: '⌄';
+            font-size: 1.5rem;
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            color: white;
+            pointer-events: none;
+        }
+        .button-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+        }
+        .schedule-card-bar {
+            width: 5px;
+            background-color: #8b5cf6; /* Violet-500 */
+        }
+        .schedule-type-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            color: #4c1d95; /* Dark violet text */
+            background-color: #e9d5ff; /* Light violet bg */
+            border: 1px solid #c4b5fd;
+        }
+        .schedule-type-badge.super-luxury, .schedule-type-badge.garuda-plus {
+            color: #be185d; /* Pink text */
+            background-color: #fce7f3; /* Pink bg */
+            border: 1px solid #f9a8d4;
+        }
+        .schedule-type-badge.express {
+            color: #0891b2; /* Cyan text */
+            background-color: #cffafe; /* Cyan bg */
+            border: 1px solid #67e8f9;
+        }
+
+        /* Tab indicator styles for sliding effect */
+        #schedule-tabs-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            width: 50%;
+            background-color: white;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(0);
+        }
+        #schedule-tabs-container.upcoming-active::after {
+            transform: translateX(100%);
+        }
+
+        /* Trip Details Page: Timeline styles */
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            min-height: 80px; /* Increased min-height */
+        }
+        .timeline-center {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px; /* Give it a fixed width */
+        }
+        .timeline-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background-color: #e2e8f0; /* gray-200 */
+            transition: background-color 0.3s;
+        }
+        .dark .timeline-line { background-color: #4b5563; }
+        .timeline-item:first-child .timeline-line { top: 50%; height: 50%; }
+        .timeline-item:last-child .timeline-line { height: 50%; }
+
+        .timeline-dot {
+            position: relative;
+            z-index: 1;
+            width: 16px;
+            height: 16px;
+            border-radius: 9999px;
+            background-color: #fff;
+            border: 3px solid #0891b2; /* cyan-600 */
+            margin-top: 1.25rem;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .dark .timeline-dot { background-color: #374151; }
+        .timeline-dot.source-dot {
+            width: 24px;
+            height: 24px;
+            background-color: #7c3aed; /* violet-600 */
+            border-color: #7c3aed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dark .timeline-dot.source-dot {
+            background-color: #8b5cf6; /* violet-500 */
+            border-color: #8b5cf6;
+        }
+        .timeline-time {
+            font-family: monospace;
+            font-weight: 500;
+            padding-top: 1.2rem;
+        }
+        .timeline-details {
+            flex-grow: 1;
+            padding-left: 1rem;
+            padding-top: 1.1rem;
+        }
+        .timeline-stop-name { font-weight: 600; transition: color 0.3s; }
+        .timeline-approximation {
+            font-size: 0.75rem;
+            color: #6b7280; /* gray-500 */
+        }
+        .dark .timeline-approximation { color: #9ca3af; /* gray-400 */ }
+        
+        #timeline-container {
+            position: relative;
+        }
+
+        #live-bus-icon-smooth {
+            position: absolute;
+            left: 40px; /* Aligns with the center of the 80px timeline-center div */
+            transform: translate(-50%, -50%); /* Center the icon on the calculated top position */
+            width: 32px;
+            height: 32px;
+            background-color: #8b5cf6; /* violet-500 */
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 5;
+            transition: top 3s linear;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.7);
+        }
+        
+        .timeline-item.passed .timeline-dot {
+            border-color: #16a34a; /* green-600 */
+            background-color: #dcfce7; /* green-100 */
+        }
+        .dark .timeline-item.passed .timeline-dot {
+            border-color: #4ade80; /* green-400 */
+            background-color: #166534; /* green-800 */
+        }
+        .timeline-item.passed .timeline-line {
+            background-color: #16a34a; /* green-600 */
+        }
+        .dark .timeline-item.passed .timeline-line {
+            background-color: #4ade80; /* green-400 */
+        }
+        .timeline-item.passed .timeline-stop-name {
+            color: #15803d; /* green-700 */
+            font-weight: 700;
+        }
+        .dark .timeline-item.passed .timeline-stop-name {
+            color: #86efac; /* green-300 */
+        }
+
+        /* Alarm Page Styles */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .dark input[type="range"] { background: #555; }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+
+        /* Share Modal Styles */
+        .modal-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': 'rgb(var(--color-primary))',
+                        'accent-dark': 'rgb(var(--color-accent))',
+                        'cyan-primary': 'rgb(var(--color-cyan))',
+                        'pink-clear': 'rgb(var(--color-pink))',
+                        'bg-page': 'rgb(var(--color-bg-light))',
+                        'bg-card': 'rgb(var(--color-bg-card))',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-page min-h-screen text-primary transition-colors duration-300">
+    <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+
+        <div id="page-search">
+            <header class="flex justify-end items-center py-4 space-x-6 text-sm md:text-base">
+                <button id="dark-mode-toggle" class="flex items-center space-x-2 text-primary hover:text-cyan-primary transition-colors">
+                    <i data-lucide="sun" class="w-5 h-5" id="mode-icon"></i>
+                    <span class="font-medium">Dark Mode</span>
+                </button>
+                <a href="#" class="flex items-center space-x-2 text-primary hover:text-cyan-primary transition-colors">
+                    <i data-lucide="mail" class="w-5 h-5"></i>
+                    <span class="hidden sm:inline font-medium">Contact Us</span>
+                </a>
+                <a href="#" class="flex items-center space-x-2 text-primary hover:text-cyan-primary transition-colors">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <span class="hidden sm:inline font-medium">About Us</span>
+                </a>
+            </header>
+
+            <section class="flex flex-col lg:flex-row items-center justify-between mt-8 lg:mt-12 mb-16 lg:mb-24">
+                <div class="lg:w-1/2 p-4">
+                    <h1 class="text-5xl md:text-6xl font-extrabold text-accent-dark tracking-tight leading-tight">
+                        Bus Tracking System
+                    </h1>
+                    <p class="mt-4 text-xl text-primary opacity-80">
+                        Track your bus in real-time and plan your journey with ease.
+                    </p>
+                </div>
+                <div class="lg:w-1/2 mt-10 lg:mt-0 max-w-lg relative">
+                    <img src="https://placehold.co/800x450/4C1D95/FFFFFF?text=Modern+Tour+Bus"
+                        onerror="this.onerror=null; this.src='https://placehold.co/800x450/4C1D95/FFFFFF?text=Bus+Tracking+System';"
+                        alt="A sleek white tour bus representing the tracking system"
+                        class="w-full h-auto rounded-xl shadow-2xl transition-all duration-500 ease-in-out hover:scale-[1.02]">
+                </div>
+            </section>
+
+            <main class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <div class="bg-card p-6 md:p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col items-center mb-6">
+                        <i data-lucide="map-pin" class="w-8 h-8 text-cyan-500 mb-2"></i>
+                        <h2 class="text-xl font-semibold text-primary">Search for Buses Between Two Locations</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">(From - To)</p>
+                    </div>
+
+                    <form id="form-location" class="space-y-5">
+                        <div>
+                            <label for="from-station" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Station*</label>
+                            <div class="relative autocomplete-container">
+                                <input type="text" id="from-station" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select starting location" autocomplete="off">
+                                <div id="from-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="to-station" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Station*</label>
+                            <div class="relative autocomplete-container">
+                                <input type="text" id="to-station" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select destination" autocomplete="off">
+                                <div id="to-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-1">
+                            <label for="location-service" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 invisible h-0">Select Service</label>
+                            <div class="select-wrapper">
+                                <select id="location-service" class="w-full py-3 px-4 rounded-xl select-button-style">
+                                    <option value="" disabled selected>Select Service</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-around pt-2 space-x-4">
+                            <button type="button" onclick="handleLocationSearch()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-bold rounded-lg shadow-lg hover:from-violet-700 hover:to-violet-800 transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                                <i data-lucide="search" class="w-5 h-5 inline-block mr-2"></i> Search
+                            </button>
+                            <button type="reset" class="w-full py-3 bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:from-pink-500 hover:to-pink-600 transition duration-150 ease-in-out transform hover:scale-[1.01]" onclick="simulateAction('Clear Location')">
+                                Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-card p-6 md:p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col items-center mb-6">
+                        <i data-lucide="bus" class="w-8 h-8 text-violet-500 mb-2"></i>
+                        <h2 class="text-xl font-semibold text-primary">Search By</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Service No/Vehicle Number</p>
+                    </div>
+
+                    <form id="form-service" class="space-y-5">
+                        <div class="flex justify-center space-x-6">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="search-type" value="service" checked
+                                    class="form-radio text-violet-600 dark:text-violet-400 h-4 w-4 border-gray-300 focus:ring-violet-500">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">By Service No.</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="search-type" value="vehicle"
+                                    class="form-radio text-violet-600 dark:text-violet-400 h-4 w-4 border-gray-300 focus:ring-violet-500">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">By Vehicle No.</span>
+                            </label>
+                        </div>
+
+                        <div id="service-no-container">
+                            <label for="service-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type or select Service Number</label>
+                            <select id="service-number" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-violet-500 focus:border-violet-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm">
+                                <option value="" disabled selected>Select a Service or type number</option>
+                            </select>
+                        </div>
+                        
+                        <div id="vehicle-no-container" class="hidden">
+                             <label for="vehicle-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search your Bus No.*</label>
+                             <div class="relative autocomplete-container">
+                                <input type="text" id="vehicle-number" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-violet-500 focus:border-violet-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="e.g., AP36Z0046" autocomplete="off">
+                                <div id="vehicle-number-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+
+                        <div class="text-center text-sm">
+                            <p class="text-gray-500 dark:text-gray-400">Don't know what is service number?</p>
+                            <a href="#" class="text-violet-600 hover:text-violet-500 font-medium" onclick="simulateAction('Click Here Link')">Click here!</a>
+                        </div>
+
+                        <div class="flex justify-around pt-2 space-x-4">
+                            <button type="button" onclick="handleServiceSearch()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-bold rounded-lg shadow-lg hover:from-violet-700 hover:to-violet-800 transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                                <i data-lucide="search" class="w-5 h-5 inline-block mr-2"></i> Search
+                            </button>
+                            <button type="reset" class="w-full py-3 bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:from-pink-500 hover:to-pink-600 transition duration-150 ease-in-out transform hover:scale-[1.01]" onclick="simulateAction('Clear Service')">
+                                Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-card p-6 md:p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col items-center mb-6">
+                        <i data-lucide="clock" class="w-8 h-8 text-pink-500 mb-2"></i>
+                        <h2 class="text-xl font-semibold text-primary">Service Time Table</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Check route timings</p>
+                    </div>
+
+                    <form id="form-timetable" class="space-y-5">
+                        <div>
+                            <label for="tt-from-station" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Station*</label>
+                            <div class="relative autocomplete-container">
+                                 <input type="text" id="tt-from-station" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-pink-500 focus:border-pink-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select starting location" autocomplete="off">
+                                <div id="tt-from-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tt-to-station" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Station*</label>
+                             <div class="relative autocomplete-container">
+                                <input type="text" id="tt-to-station" required class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-pink-500 focus:border-pink-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select destination" autocomplete="off">
+                                <div id="tt-to-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tt-depot" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 invisible h-0">[Optional] Select Depot</label>
+                            <div class="select-wrapper">
+                                <select id="tt-depot" class="w-full py-3 px-4 rounded-xl select-button-style">
+                                    <option value="" selected>Select Depot (Optional)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-around pt-2 space-x-4">
+                            <button type="button" onclick="handleTimetableSearch()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-bold rounded-lg shadow-lg hover:from-violet-700 hover:to-violet-800 transition duration-150 ease-in-out transform hover:scale-[1.01]">
+                                <i data-lucide="search" class="w-5 h-5 inline-block mr-2"></i> Search
+                            </button>
+                            <button type="reset" class="w-full py-3 bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:from-pink-500 hover:to-pink-600 transition duration-150 ease-in-out transform hover:scale-[1.01]" onclick="simulateAction('Clear Timetable')">
+                                Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+        </div>
+        
+        <div id="page-schedule" class="hidden">
+            <header class="header-bg text-white shadow-lg sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <button onclick="showSearchPage()" class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <h1 class="text-xl font-bold">APSRTC</h1>
+                    <button class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="chevron-down" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="schedule-tabs-container" class="flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-violet-800/80 rounded-t-lg relative">
+                    <div id="schedule-tab-general" class="schedule-tab w-1/2 text-center py-3 font-semibold text-sm cursor-pointer text-white transition-colors duration-300">
+                        Schedule In General
+                    </div>
+                    <div id="schedule-tab-upcoming" class="schedule-tab w-1/2 text-center py-3 font-medium text-sm text-gray-300 hover:text-white transition-colors duration-300 cursor-pointer">
+                        Upcoming Trips
+                    </div>
+                </div>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="flex justify-center items-center my-6">
+                    <h2 id="schedule-from-station" class="text-2xl font-semibold text-primary">Guntur</h2>
+                    <div class="mx-4 p-2 bg-violet-600 rounded-full text-white shadow-md">
+                        <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+                    </div>
+                    <h2 id="schedule-to-station" class="text-2xl font-semibold text-primary">Anantapur</h2>
+                </div>
+                <div id="schedule-list" class="space-y-4"></div>
+            </main>
+        </div>
+
+        <div id="page-trip-details" class="hidden">
+            <header class="header-bg text-white shadow-lg sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <button onclick="goBackToSchedule()" class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="bus" class="w-6 h-6"></i>
+                        <h1 class="text-xl font-bold">Trip Details</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="showAlarmPage()" class="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span class="text-sm font-medium">Alarm</span>
+                        </button>
+                        <button onclick="showShareModal()" class="text-white hover:text-gray-200 transition-colors"><i data-lucide="share-2" class="w-5 h-5"></i></button>
+                        <button onclick="toggleSaveTrip()" class="text-white hover:text-gray-200 transition-colors"><i id="save-trip-icon" data-lucide="star" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div id="trip-info-header" class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mb-6 bg-card p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700"></div>
+                <div class="flex justify-between items-center bg-cyan-600 text-white font-bold text-sm px-4 py-2 rounded-t-lg">
+                    <div class="w-1/4 text-left">Arrival</div>
+                    <div class="flex-grow text-center">Stop Name</div>
+                    <div class="w-1/4 text-right">Departure</div>
+                </div>
+                <div class="bg-card p-4 rounded-b-lg shadow-sm border-x border-b border-gray-100 dark:border-gray-700">
+                    <div id="timeline-container" class="relative">
+                        <div id="trip-timeline">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <div id="live-bus-icon-smooth" class="hidden items-center justify-center">
+                             <i data-lucide="bus" class="w-5 h-5 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="page-alarm" class="hidden">
+            <header class="header-bg text-white shadow-lg sticky top-0 z-10">
+                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <button onclick="goBackToTripDetails()" class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <h1 class="text-xl font-bold">Set Alarms</h1>
+                    <button class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="more-vertical" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </header>
+            <main class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="bg-card p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 space-y-8">
+                    <!-- Mid-point Stop Alarm -->
+                    <div>
+                        <h2 class="text-lg font-semibold text-center mb-4 text-primary">Set Arrive Alarm</h2>
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                                    <i data-lucide="clock" class="w-5 h-5"></i>
+                                    <label class="text-sm font-medium">When</label>
+                                </div>
+                                <p id="stop-alarm-time-display" class="text-xl font-semibold text-primary mt-2 ml-8">10 minutes before</p>
+                                <input id="stop-alarm-slider" type="range" min="5" max="30" value="10" step="5" class="w-full mt-3">
+                            </div>
+                            <hr class="dark:border-gray-600">
+                            <div>
+                                <div class="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                    <label class="text-sm font-medium">Where</label>
+                                </div>
+                                <div class="relative mt-2 ml-8 autocomplete-container">
+                                    <input type="text" id="stop-alarm-station-input" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select alarm station" autocomplete="off">
+                                    <div id="stop-alarm-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="setStopAlarm()" class="w-full py-3 mt-8 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition duration-150 ease-in-out">
+                            Set Stop Alarm
+                        </button>
+
+                        <div class="mt-6">
+                            <label for="stop-mobile-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">Mobile Number for SMS Alert</label>
+                            <input type="tel" id="stop-mobile-number" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Enter 10-digit mobile number" autocomplete="off">
+                        </div>
+                        <button onclick="setTextAlarm('stop')" class="w-full py-3 mt-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-150 ease-in-out">
+                            Set Stop SMS Alert
+                        </button>
+                    </div>
+
+                    <hr class="border-t-2 border-dashed border-gray-300 dark:border-gray-600 my-8">
+
+                    <!-- Final Destination Alarm -->
+                    <div>
+                        <h2 class="text-lg font-semibold text-center mb-4 text-primary">Set Final Destination Alarm</h2>
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                                    <i data-lucide="clock" class="w-5 h-5"></i>
+                                    <label class="text-sm font-medium">When</label>
+                                </div>
+                                <p id="destination-alarm-time-display" class="text-xl font-semibold text-primary mt-2 ml-8">15 minutes before</p>
+                                <input id="destination-alarm-slider" type="range" min="5" max="30" value="15" step="5" class="w-full mt-3">
+                            </div>
+                            <hr class="dark:border-gray-600">
+                            <div>
+                                <div class="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
+                                    <i data-lucide="flag" class="w-5 h-5"></i>
+                                    <label class="text-sm font-medium">Where</label>
+                                </div>
+                                <div class="relative mt-2 ml-8 autocomplete-container">
+                                    <input type="text" id="destination-alarm-station-input" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Type or select alarm station" autocomplete="off">
+                                    <div id="destination-alarm-station-suggestions" class="autocomplete-suggestions absolute z-20 w-full bg-card border border-gray-300 dark:border-gray-600 rounded-b-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="setDestinationAlarm()" class="w-full py-3 mt-8 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition duration-150 ease-in-out">
+                            Set Destination Alarm
+                        </button>
+                        <div class="mt-6">
+                            <label for="destination-mobile-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">Mobile Number for SMS Alert</label>
+                            <input type="tel" id="destination-mobile-number" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 dark:text-gray-100 shadow-sm" placeholder="Enter 10-digit mobile number" autocomplete="off">
+                        </div>
+                        <button onclick="setTextAlarm('destination')" class="w-full py-3 mt-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-150 ease-in-out">
+                            Set Destination SMS Alert
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <div id="page-timetable" class="hidden">
+            <header class="header-bg text-white shadow-lg sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <button onclick="showSearchPage()" class="text-white hover:text-gray-200 transition-colors">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <h1 id="timetable-title" class="text-xl font-bold">Service Timetable</h1>
+                    <div></div> <!-- Spacer -->
+                </div>
+            </header>
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div id="timetable-content">
+                    <!-- Timetable will be dynamically inserted here -->
+                </div>
+            </main>
+        </div>
+
+
+        <div id="notification-box" class="fixed bottom-5 right-5 z-50 transition-all duration-500 transform translate-x-full opacity-0">
+            <div class="bg-violet-600 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3">
+                <span id="notification-icon-container">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                </span>
+                <span id="notification-message" class="font-medium"></span>
+            </div>
+        </div>
+        
+        <!-- Share Modal -->
+        <div id="share-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="modal-overlay absolute inset-0 bg-black/60" onclick="hideShareModal()"></div>
+            <div class="modal-content bg-card w-full max-w-md m-4 p-6 rounded-2xl shadow-2xl transform scale-95" >
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-primary">Share Bus Details</h2>
+                    <button onclick="hideShareModal()" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div id="share-details-content" class="divide-y divide-gray-200 dark:divide-gray-600">
+                     <!-- Dynamic content will be injected here -->
+                </div>
+                
+                <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+                     <button onclick="handleShare('sms')" class="flex flex-col items-center justify-center p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i data-lucide="message-square" class="w-6 h-6 mb-1 text-blue-500"></i>
+                        <span class="text-xs font-medium">SMS</span>
+                    </button>
+                     <button onclick="handleShare('whatsapp')" class="flex flex-col items-center justify-center p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i data-lucide="message-circle" class="w-6 h-6 mb-1 text-green-500"></i>
+                        <span class="text-xs font-medium">WhatsApp</span>
+                    </button>
+                     <button onclick="handleShare('more')" class="flex flex-col items-center justify-center p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i data-lucide="more-horizontal" class="w-6 h-6 mb-1 text-gray-500"></i>
+                        <span class="text-xs font-medium">More</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+        <script>
+        lucide.createIcons();
+
+        const pageSearch = document.getElementById('page-search');
+        const pageSchedule = document.getElementById('page-schedule');
+        const pageTripDetails = document.getElementById('page-trip-details');
+        const pageAlarm = document.getElementById('page-alarm');
+        const pageTimetable = document.getElementById('page-timetable');
+        const shareModal = document.getElementById('share-modal');
+
+        let activeTab = 'general';
+        let lastFromStation = '';
+        let lastToStation = '';
+        let currentScheduleId = null;
+        let currentScheduleDetails = null; // To hold details for sharing
+        let busPositionInterval = null;
+        let savedTrips = new Set();
+
+        function showSearchPage() {
+            clearInterval(busPositionInterval);
+            pageSearch.classList.remove('hidden');
+            pageSchedule.classList.add('hidden');
+            pageTripDetails.classList.add('hidden');
+            pageAlarm.classList.add('hidden');
+            pageTimetable.classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function showSchedulePage(from, to) {
+            clearInterval(busPositionInterval);
+            pageSearch.classList.add('hidden');
+            pageSchedule.classList.remove('hidden');
+            pageTripDetails.classList.add('hidden');
+            pageAlarm.classList.add('hidden');
+            pageTimetable.classList.add('hidden');
+
+            if(from) lastFromStation = from;
+            if(to) lastToStation = to;
+            
+            document.getElementById('schedule-from-station').textContent = lastFromStation || 'Service';
+            document.getElementById('schedule-to-station').textContent = lastToStation || 'Route';
+
+            const allSchedules = mockSchedules; 
+            const now = new Date();
+            const upcomingSchedules = allSchedules.filter(s => {
+                const [hours, minutes] = s.departure.split(':').map(Number);
+                const tripTime = new Date();
+                tripTime.setHours(hours, minutes, 0, 0);
+                return tripTime > now;
+            });
+
+            const generalTab = document.getElementById('schedule-tab-general');
+            const upcomingTab = document.getElementById('schedule-tab-upcoming');
+            generalTab.textContent = `Schedule In General(${allSchedules.length})`;
+            upcomingTab.textContent = `Upcoming Trips(${upcomingSchedules.length})`;
+
+            activeTab = 'general';
+            generalTab.classList.add('border-white', 'font-semibold');
+            generalTab.classList.remove('text-gray-300', 'font-medium');
+            upcomingTab.classList.remove('border-white', 'font-semibold');
+            upcomingTab.classList.add('text-gray-300', 'font-medium');
+
+            generateScheduleCards(lastFromStation, lastToStation);
+            window.scrollTo(0, 0);
+        }
+
+        function showTimetablePage(from, to) {
+            clearInterval(busPositionInterval);
+            pageSearch.classList.add('hidden');
+            pageSchedule.classList.add('hidden');
+            pageTripDetails.classList.add('hidden');
+            pageAlarm.classList.add('hidden');
+            pageTimetable.classList.remove('hidden');
+
+            document.getElementById('timetable-title').textContent = `${from} to ${to}`;
+
+            const routeKey = `${from}-${to}`;
+            const timetableData = mockTimetables[routeKey];
+            const contentContainer = document.getElementById('timetable-content');
+
+            if (timetableData && timetableData.length > 0) {
+                contentContainer.innerHTML = `
+                    <div class="bg-card rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="grid grid-cols-4 bg-violet-100 dark:bg-violet-900/50 p-4 font-bold text-sm text-center text-primary">
+                            <div>Service No</div>
+                            <div>Departure</div>
+                            <div>Arrival</div>
+                            <div>Bus Type</div>
+                        </div>
+                        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                        ${timetableData.map(entry => {
+                             let badgeClass = 'schedule-type-badge';
+                             if (entry.type.toLowerCase().includes('express')) badgeClass += ' express';
+                             if (entry.type.toLowerCase().includes('luxury') || entry.type.toLowerCase().includes('garuda')) badgeClass += ' super-luxury';
+                             return `
+                                <div class="grid grid-cols-4 p-4 items-center text-center text-sm">
+                                    <div class="font-semibold">${entry.serviceNo}</div>
+                                    <div class="font-mono text-base">${entry.departure}</div>
+                                    <div class="font-mono text-base">${entry.arrival}</div>
+                                    <div class="flex justify-center"><span class="${badgeClass}">${entry.type}</span></div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentContainer.innerHTML = `
+                    <div class="bg-card p-8 rounded-xl shadow-md text-center">
+                        <i data-lucide="clock-off" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-primary">No Timetable Found</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">Sorry, we could not find a direct service timetable for the route from ${from} to ${to}.</p>
+                    </div>`;
+            }
+            lucide.createIcons();
+            window.scrollTo(0, 0);
+        }
+        
+        function goBackToSchedule() {
+            clearInterval(busPositionInterval);
+            pageSchedule.classList.remove('hidden');
+            pageTripDetails.classList.add('hidden');
+            pageAlarm.classList.add('hidden');
+            pageTimetable.classList.add('hidden');
+        }
+        
+        function goBackToTripDetails() {
+            pageAlarm.classList.add('hidden');
+            pageTripDetails.classList.remove('hidden');
+        }
+
+        function updateBusPosition(schedule) {
+            if (!schedule) return;
+
+            const timelineEl = document.getElementById('trip-timeline');
+            const busIcon = document.getElementById('live-bus-icon-smooth');
+            if (!timelineEl || !busIcon) return;
+            
+            if (schedule.status !== "On Time" && schedule.status !== "Delayed") {
+                busIcon.style.display = 'none';
+                return;
+            }
+            
+            const departureTime = new Date();
+            const [depHours, depMinutes] = schedule.departure.split(':').map(Number);
+            departureTime.setHours(depHours, depMinutes, 0, 0);
+
+            const arrivalTime = new Date();
+            const [arrHours, arrMinutes] = schedule.arrival.split(':').map(Number);
+            arrivalTime.setHours(arrHours, arrMinutes, 0, 0);
+            if (arrivalTime < departureTime) arrivalTime.setDate(arrivalTime.getDate() + 1);
+
+            const currentTime = new Date();
+            const timelineItems = timelineEl.querySelectorAll('.timeline-item');
+
+            if (currentTime < departureTime || currentTime > arrivalTime || timelineItems.length < 2) {
+                if (schedule.status.toLowerCase() !== 'yet to start') {
+                    busIcon.style.display = 'none';
+                }
+                return;
+            }
+            
+            const stops = mockTripStops[schedule.id] || [];
+            let lastPassedStopIndex = -1;
+
+            if (currentTime >= departureTime) {
+                lastPassedStopIndex = 0;
+            }
+
+            stops.forEach((stop, index) => {
+                if (index === 0 || stop.arrival === "Source") return;
+                const [stopHours, stopMinutes] = stop.arrival.split(':').map(Number);
+                const stopTime = new Date(departureTime);
+                stopTime.setHours(stopHours, stopMinutes);
+                if (stopTime < departureTime) stopTime.setDate(stopTime.getDate() + 1);
+                if (currentTime >= stopTime) lastPassedStopIndex = index;
+            });
+            
+            // Color passed stops
+            timelineItems.forEach((item, index) => {
+                if (index <= lastPassedStopIndex) {
+                    item.classList.add('passed');
+                } else {
+                    item.classList.remove('passed');
+                }
+            });
+
+            // Position bus icon
+            if (lastPassedStopIndex >= stops.length - 1) {
+                busIcon.style.display = 'none'; // Trip finished
+            } else {
+                const lastStop = stops[lastPassedStopIndex];
+                const nextStop = stops[lastPassedStopIndex + 1];
+
+                const lastDot = timelineItems[lastPassedStopIndex]?.querySelector('.timeline-dot');
+                const nextDot = timelineItems[lastPassedStopIndex + 1]?.querySelector('.timeline-dot');
+
+                if (lastDot && nextDot) {
+                    const startY = lastDot.offsetTop + (lastDot.offsetHeight / 2);
+                    const endY = nextDot.offsetTop + (nextDot.offsetHeight / 2);
+                    const segmentDistance = endY - startY;
+
+                    const lastStopTimeStr = lastStop.departure !== "Source" ? lastStop.departure : schedule.departure;
+                    const nextStopTimeStr = nextStop.arrival;
+
+                    const [lastHours, lastMins] = lastStopTimeStr.split(':').map(Number);
+                    const lastStopTime = new Date(departureTime);
+                    lastStopTime.setHours(lastHours, lastMins);
+                    if (lastPassedStopIndex === 0) lastStopTime.setTime(departureTime.getTime());
+                    else if (lastStopTime < departureTime) lastStopTime.setDate(lastStopTime.getDate() + 1);
+
+                    const [nextHours, nextMins] = nextStopTimeStr.split(':').map(Number);
+                    const nextStopTime = new Date(departureTime);
+                    nextStopTime.setHours(nextHours, nextMins);
+                    if (nextStopTime < lastStopTime) nextStopTime.setDate(nextStopTime.getDate() + 1);
+
+                    const segmentTotalDuration = nextStopTime - lastStopTime;
+                    const segmentElapsedDuration = currentTime - lastStopTime;
+
+                    let segmentProgress = 0;
+                    if (segmentTotalDuration > 0) {
+                        segmentProgress = Math.min(1, Math.max(0, segmentElapsedDuration / segmentTotalDuration));
+                    }
+                    
+                    const newTop = startY + (segmentProgress * segmentDistance);
+                    busIcon.style.top = `${newTop}px`;
+                    busIcon.style.display = 'flex';
+                } else {
+                     busIcon.style.display = 'none';
+                }
+            }
+        }
+
+        function getStatusClass(status) {
+            switch (status.toLowerCase()) {
+                case 'on time':
+                    return 'text-green-600';
+                case 'delayed':
+                    return 'text-red-500';
+                case 'completed':
+                    return 'text-gray-600 dark:text-gray-400';
+                case 'yet to start':
+                    return 'text-blue-500';
+                default:
+                    return 'text-primary';
+            }
+        }
+
+        function showTripDetailsPage(scheduleId) {
+            currentScheduleId = scheduleId;
+            currentScheduleDetails = mockSchedules.find(s => s.id === scheduleId);
+            
+            clearInterval(busPositionInterval);
+
+            pageSchedule.classList.add('hidden');
+            pageAlarm.classList.add('hidden');
+            pageTripDetails.classList.remove('hidden');
+            pageTimetable.classList.add('hidden');
+            
+            const schedule = currentScheduleDetails;
+            let stops = mockTripStops[scheduleId] ? JSON.parse(JSON.stringify(mockTripStops[scheduleId])) : [];
+
+            if (!schedule) {
+                console.error("Schedule not found:", scheduleId);
+                return;
+            }
+
+            const saveIcon = document.getElementById('save-trip-icon');
+            if (savedTrips.has(scheduleId)) {
+                saveIcon.classList.add('fill-amber-400', 'text-amber-400');
+            } else {
+                saveIcon.classList.remove('fill-amber-400', 'text-amber-400');
+            }
+
+            const fromStation = lastFromStation || (stops.length > 0 ? stops[0].stopName : 'N/A');
+            const toStation = lastToStation || (stops.length > 0 ? stops[stops.length - 1].stopName : 'N/A');
+
+            if (stops.length > 0) {
+                stops[0].stopName = fromStation.toUpperCase();
+                stops[stops.length - 1].stopName = toStation.toUpperCase();
+            }
+
+            const statusClass = getStatusClass(schedule.status);
+            const infoHeader = document.getElementById('trip-info-header');
+            infoHeader.innerHTML = `
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Service No</span><p class="font-bold text-lg text-primary">${schedule.id}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Status</span><p class="font-bold text-lg ${statusClass}">${schedule.status}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Depot Name</span><p>${schedule.depot}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Vehicle No</span><p>${schedule.vehicleNo}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">From</span><p>${fromStation}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">To</span><p>${toStation}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Bus Type</span><p>${schedule.type}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Scheduled End</span><p>${schedule.arrival}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Scheduled Start</span><p>${schedule.departure}</p></div>
+                <div><span class="font-semibold text-gray-500 dark:text-gray-400">Help Line</span><p>0866 2570005</p></div>
+            `;
+
+            const timelineContainer = document.getElementById('trip-timeline');
+            timelineContainer.innerHTML = stops.map((stop, index) => {
+                const isSource = index === 0;
+                
+                return `
+                <div class="timeline-item">
+                    <div class="w-1/4 text-left timeline-time">${stop.arrival}</div>
+                    <div class="timeline-center">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-dot ${isSource ? 'source-dot' : ''}">
+                            ${isSource ? '<i data-lucide="bus" class="w-4 h-4 text-white"></i>' : ''}
+                        </div>
+                    </div>
+                    <div class="w-1/2 timeline-details">
+                        <p class="timeline-stop-name">${stop.stopName}</p>
+                        <p class="timeline-approximation">Approximation</p>
+                    </div>
+                    <div class="w-1/4 text-right timeline-time">${stop.departure}</div>
+                </div>
+                `
+            }).join('');
+            
+            lucide.createIcons();
+
+            setTimeout(() => {
+                updateBusPosition(schedule);
+                busPositionInterval = setInterval(() => updateBusPosition(schedule), 5000);
+            }, 100);
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function showAlarmPage() {
+            pageTripDetails.classList.add('hidden');
+            pageAlarm.classList.remove('hidden');
+            pageTimetable.classList.add('hidden');
+
+            const stops = mockTripStops[currentScheduleId] || [];
+            const stopNamesForAutocomplete = stops.map(s => ({ name: s.stopName }));
+
+            const stopAlarmInput = document.getElementById('stop-alarm-station-input');
+            stopAlarmInput.value = '';
+            setupAutocomplete('stop-alarm-station-input', 'stop-alarm-station-suggestions', stopNamesForAutocomplete);
+
+            const destinationAlarmInput = document.getElementById('destination-alarm-station-input');
+            destinationAlarmInput.value = '';
+            setupAutocomplete('destination-alarm-station-input', 'destination-alarm-station-suggestions', stopNamesForAutocomplete);
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function setStopAlarm() {
+            const time = document.getElementById('stop-alarm-slider').value;
+            const station = document.getElementById('stop-alarm-station-input').value.trim();
+            if (!station) {
+                simulateAction('Please select a stop for the alarm.', 'error');
+                return;
+            }
+            simulateAction(`Stop alarm set for ${station}, ${time} minutes before.`);
+        }
+
+        function setDestinationAlarm() {
+            const time = document.getElementById('destination-alarm-slider').value;
+            const station = document.getElementById('destination-alarm-station-input').value.trim();
+            if (!station) {
+                simulateAction('Please select a destination for the alarm.', 'error');
+                return;
+            }
+            simulateAction(`Destination alarm set for ${station}, ${time} minutes before.`);
+        }
+
+        function setTextAlarm(type) {
+            let time, station, mobileNumber, stationInputId, sliderId, mobileInputId;
+
+            if (type === 'stop') {
+                stationInputId = 'stop-alarm-station-input';
+                sliderId = 'stop-alarm-slider';
+                mobileInputId = 'stop-mobile-number';
+            } else { // destination
+                stationInputId = 'destination-alarm-station-input';
+                sliderId = 'destination-alarm-slider';
+                mobileInputId = 'destination-mobile-number';
+            }
+            
+            time = document.getElementById(sliderId).value;
+            station = document.getElementById(stationInputId).value.trim();
+            mobileNumber = document.getElementById(mobileInputId).value.trim();
+
+            if (!station || station === 'N/A') {
+                simulateAction(`Please select a ${type} station first.`, 'error');
+                return;
+            }
+            if (!mobileNumber || !/^\d{10}$/.test(mobileNumber)) {
+                simulateAction('Please enter a valid 10-digit mobile number.', 'error');
+                return;
+            }
+            simulateAction(`Text alarm for ${type} stop "${station}" set to ${mobileNumber}.`);
+        }
+
+        function toggleSaveTrip() {
+            const icon = document.getElementById('save-trip-icon');
+            if (!currentScheduleId) return;
+
+            if (savedTrips.has(currentScheduleId)) {
+                savedTrips.delete(currentScheduleId);
+                icon.classList.remove('fill-amber-400', 'text-amber-400');
+                simulateAction('Trip removed from favorites.');
+            } else {
+                savedTrips.add(currentScheduleId);
+                icon.classList.add('fill-amber-400', 'text-amber-400');
+                simulateAction('Trip saved to favorites!');
+            }
+        }
+
+        showSearchPage();
+
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const modeIcon = document.getElementById('mode-icon');
+        const appBody = document.documentElement;
+
+        function updateIcon(isDark) {
+            if (isDark) {
+                modeIcon.setAttribute('data-lucide', 'moon');
+                darkModeToggle.querySelector('span').textContent = 'Light Mode';
+            } else {
+                modeIcon.setAttribute('data-lucide', 'sun');
+                darkModeToggle.querySelector('span').textContent = 'Dark Mode';
+            }
+            lucide.createIcons();
+        }
+
+        const savedMode = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedMode === 'dark' || (!savedMode && prefersDark)) {
+            appBody.classList.add('dark');
+            updateIcon(true);
+        } else {
+            updateIcon(false);
+        }
+        darkModeToggle.addEventListener('click', () => {
+            appBody.classList.toggle('dark');
+            const isDark = appBody.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateIcon(isDark);
+        });
+
+        const notificationBox = document.getElementById('notification-box');
+        const notificationMessage = document.getElementById('notification-message');
+        let notificationTimeout;
+
+        function simulateAction(actionName, type = 'success') {
+            clearTimeout(notificationTimeout);
+            const iconContainer = document.getElementById('notification-icon-container');
+            const box = notificationBox.querySelector('div');
+            notificationMessage.textContent = actionName;
+            box.classList.remove('bg-violet-600', 'bg-red-500');
+            
+            let iconName = 'check-circle';
+            if (type === 'error') {
+                iconName = 'x-circle';
+                box.classList.add('bg-red-500');
+            } else {
+                box.classList.add('bg-violet-600');
+            }
+
+            iconContainer.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
+            lucide.createIcons();
+
+            notificationBox.classList.remove('translate-x-full', 'opacity-0');
+            notificationBox.classList.add('translate-x-0', 'opacity-100');
+            notificationTimeout = setTimeout(() => {
+                notificationBox.classList.add('translate-x-full', 'opacity-0');
+            }, 3000);
+            console.log(`User action: ${actionName}`);
+        }
+        
+        const apBusStopsDetailed = [
+            { name: "Visakhapatnam", district: "Visakhapatnam", mandal: "Visakhapatnam (Urban)", pincode: "530001", state: "AP" },
+            { name: "Vijayawada", district: "NTR", mandal: "Vijayawada (Urban)", pincode: "520001", state: "AP" },
+            { name: "Guntur", district: "Guntur", mandal: "Guntur", pincode: "522001", state: "AP" },
+            { name: "Nellore", district: "Nellore", mandal: "Nellore", pincode: "524001", state: "AP" },
+            { name: "Kurnool", district: "Kurnool", mandal: "Kurnool", pincode: "518001", state: "AP" },
+            { name: "Tirupati", district: "Tirupati", mandal: "Tirupati (Urban)", pincode: "517501", state: "AP" },
+            { name: "Anantapur", district: "Anantapur", mandal: "Anantapur", pincode: "515001", state: "AP" },
+            { name: "SCINDIA", district: "Visakhapatnam", mandal: "Visakhapatnam (Urban)", pincode: "530005", state: "AP" },
+            { name: "STEEL CITY", district: "Visakhapatnam", mandal: "Gajuwaka", pincode: "530032", state: "AP" },
+            { name: "CHODAVARAM", district: "Anakapalli", mandal: "Chodavaram", pincode: "531036", state: "AP" },
+            { name: "ANAKAPALLE", district: "Anakapalli", mandal: "Anakapalle", pincode: "531001", state: "AP" },
+            { name: "GAJUWAKA", district: "Visakhapatnam", mandal: "Gajuwaka", pincode: "530026", state: "AP" },
+
+        ];
+        const apServices = [
+            { id: "S-101", name: "Indra Deluxe - Vizag to Vijayawada", from: "Visakhapatnam", to: "Vijayawada" },
+            { id: "S-205", name: "Garuda Plus - Tirupati to Nellore", from: "Tirupati", to: "Nellore" },
+        ];
+        const apVehicles = [
+            { name: "AP36Z0046", serviceId: "S-101" },
+            { name: "AP39Z0046", serviceId: "S-101" },
+            { name: "AP30Z0046", serviceId: "S-205" },
+            { name: "AP16Z0046", serviceId: "S-205" },
+        ];
+        const apDepots = ["Vijayawada City Depot", "Visakhapatnam Depot 1", "Guntur RTC Complex"];
+
+        const mockTimetables = {
+            "Guntur-Anantapur": [
+                { serviceNo: "333 Express", departure: "07:00", arrival: "15:30", type: "Express" },
+                { serviceNo: "451 Super Luxury", departure: "09:30", arrival: "17:45", type: "Super Luxury" },
+                { serviceNo: "820 Garuda Plus", departure: "21:00", arrival: "05:00", type: "Garuda Plus" }
+            ],
+            "Visakhapatnam-Vijayawada": [
+                { serviceNo: "V101 Express", departure: "05:45", arrival: "12:00", type: "Express" },
+                { serviceNo: "V202 Super Luxury", departure: "08:00", arrival: "14:00", type: "Super Luxury" },
+                { serviceNo: "V555 Express", departure: "14:30", arrival: "20:45", type: "Express" },
+                { serviceNo: "V909 Garuda", departure: "22:00", arrival: "04:00", type: "Garuda Plus" },
+            ]
+        };
+
+        function populateSelect(selectId, optionsArray) {
+            const selectElement = document.getElementById(selectId);
+            if (!selectElement) return;
+            optionsArray.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                selectElement.appendChild(option);
+            });
+        }
+        
+        function setupAutocomplete(inputId, suggestionsId, data) {
+            const input = document.getElementById(inputId);
+            const suggestionsContainer = document.getElementById(suggestionsId);
+
+            const displaySuggestions = (filter = '') => {
+                suggestionsContainer.innerHTML = '';
+                const query = filter.toLowerCase().trim();
+                
+                const filteredData = data.filter(stop => stop.name.toLowerCase().includes(query));
+                
+                if (filteredData.length === 0) {
+                    suggestionsContainer.classList.add('hidden');
+                    return;
+                }
+                
+                filteredData.forEach(stop => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.dataset.name = stop.name;
+                    if (stop.district && stop.mandal) {
+                         item.innerHTML = `<div class="suggestion-item-name">${stop.name.toUpperCase()}</div><div class="suggestion-item-details">${stop.district} (DT) ${stop.mandal} (MDL) - ${stop.pincode} ${stop.state}</div>`;
+                    } else {
+                        item.innerHTML = `<div class="suggestion-item-name">${stop.name.toUpperCase()}</div>`;
+                    }
+                    item.addEventListener('click', () => {
+                        input.value = item.dataset.name;
+                        suggestionsContainer.classList.add('hidden');
+                    });
+                    suggestionsContainer.appendChild(item);
+                });
+                suggestionsContainer.classList.remove('hidden');
+            };
+            
+            input.addEventListener('input', () => {
+                displaySuggestions(input.value);
+            });
+
+            input.addEventListener('focus', () => {
+                displaySuggestions(input.value);
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!suggestionsContainer.classList.contains('hidden') && suggestionsContainer.children.length > 0) {
+                        suggestionsContainer.firstElementChild.click();
+                    }
+                }
+            });
+
+            document.addEventListener('mousedown', (e) => { 
+                if (!input.parentElement.contains(e.target)) {
+                    suggestionsContainer.classList.add('hidden'); 
+                }
+            });
+        }
+
+
+        function handleLocationSearch() {
+            const fromInput = document.getElementById('from-station');
+            const toInput = document.getElementById('to-station');
+
+            // Reset borders
+            fromInput.classList.remove('border-red-500', 'ring-2', 'ring-red-400');
+            toInput.classList.remove('border-red-500', 'ring-2', 'ring-red-400');
+
+            const from = fromInput.value.trim();
+            const to = toInput.value.trim();
+
+            let hasError = false;
+
+            if (!from) {
+                fromInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                hasError = true;
+            }
+            if (!to) {
+                toInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                simulateAction('Please select both From and To stations.', 'error');
+                return;
+            }
+
+            if (from === to) {
+                fromInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                toInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                simulateAction('From and To stations cannot be the same.', 'error');
+                return;
+            }
+            showSchedulePage(from, to);
+        }
+
+        function handleServiceSearch() {
+            const searchType = document.querySelector('input[name="search-type"]:checked').value;
+
+            if (searchType === 'service') {
+                const serviceId = document.getElementById('service-number').value;
+                if (!serviceId) {
+                    simulateAction('Please select a service number.', 'error');
+                    return;
+                }
+                const selectedService = apServices.find(service => service.id === serviceId);
+                if (selectedService) {
+                    showSchedulePage(selectedService.from, selectedService.to);
+                } else {
+                     simulateAction('Service not found.', 'error');
+                }
+            } else { // searchType === 'vehicle'
+                const vehicleNumber = document.getElementById('vehicle-number').value.trim();
+                if (!vehicleNumber) {
+                    simulateAction('Please enter a vehicle number.', 'error');
+                    return;
+                }
+                const selectedVehicle = apVehicles.find(v => v.name.toLowerCase() === vehicleNumber.toLowerCase());
+                if (selectedVehicle) {
+                    const associatedService = apServices.find(s => s.id === selectedVehicle.serviceId);
+                    if (associatedService) {
+                        showSchedulePage(associatedService.from, associatedService.to);
+                    } else {
+                         simulateAction('Service for this vehicle not found.', 'error');
+                    }
+                } else {
+                    simulateAction('Vehicle not found.', 'error');
+                }
+            }
+        }
+
+        function handleTimetableSearch() {
+            const fromInput = document.getElementById('tt-from-station');
+            const toInput = document.getElementById('tt-to-station');
+            
+            // Reset borders
+            fromInput.classList.remove('border-red-500', 'ring-2', 'ring-red-400');
+            toInput.classList.remove('border-red-500', 'ring-2', 'ring-red-400');
+
+            const from = fromInput.value.trim();
+            const to = toInput.value.trim();
+            
+            let hasError = false;
+
+            if (!from) {
+                fromInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                hasError = true;
+            }
+            if (!to) {
+                toInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                hasError = true;
+            }
+
+            if (hasError) {
+                simulateAction('Please select both From and To stations.', 'error');
+                return;
+            }
+
+            if (from === to) {
+                fromInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                toInput.classList.add('border-red-500', 'ring-2', 'ring-red-400');
+                simulateAction('From and To stations cannot be the same.', 'error');
+                return;
+            }
+            showTimetablePage(from, to);
+        }
+
+        function populateServiceSelect(selectId, servicesArray) {
+            const selectElement = document.getElementById(selectId);
+            if (!selectElement) return;
+            servicesArray.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id;
+                option.textContent = `${service.id} - ${service.name}`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupAutocomplete('from-station', 'from-station-suggestions', apBusStopsDetailed);
+            setupAutocomplete('to-station', 'to-station-suggestions', apBusStopsDetailed);
+            populateServiceSelect('location-service', apServices);
+            populateServiceSelect('service-number', apServices); 
+            setupAutocomplete('tt-from-station', 'tt-from-station-suggestions', apBusStopsDetailed);
+            setupAutocomplete('tt-to-station', 'tt-to-station-suggestions', apBusStopsDetailed);
+            populateSelect('tt-depot', apDepots);
+            setupAutocomplete('vehicle-number', 'vehicle-number-suggestions', apVehicles);
+            
+            const generalTab = document.getElementById('schedule-tab-general');
+            const upcomingTab = document.getElementById('schedule-tab-upcoming');
+            const tabsContainer = document.getElementById('schedule-tabs-container');
+            
+            function setActiveTab(tab) {
+                activeTab = tab;
+                if (tab === 'general') {
+                    tabsContainer.classList.remove('upcoming-active');
+                    generalTab.classList.add('font-semibold', 'text-white');
+                    generalTab.classList.remove('font-medium', 'text-gray-300');
+                    upcomingTab.classList.add('font-medium', 'text-gray-300');
+                    upcomingTab.classList.remove('font-semibold', 'text-white');
+                } else { // upcoming
+                    tabsContainer.classList.add('upcoming-active');
+                    generalTab.classList.add('font-medium', 'text-gray-300');
+                    generalTab.classList.remove('font-semibold', 'text-white');
+                    upcomingTab.classList.add('font-semibold', 'text-white');
+                    upcomingTab.classList.remove('font-medium', 'text-gray-300');
+                }
+                generateScheduleCards(document.getElementById('schedule-from-station').textContent, document.getElementById('schedule-to-station').textContent);
+            }
+            generalTab.addEventListener('click', () => setActiveTab('general'));
+            upcomingTab.addEventListener('click', () => setActiveTab('upcoming'));
+            
+            const stopAlarmSlider = document.getElementById('stop-alarm-slider');
+            const stopAlarmTimeDisplay = document.getElementById('stop-alarm-time-display');
+            stopAlarmSlider.addEventListener('input', (event) => {
+                stopAlarmTimeDisplay.textContent = `${event.target.value} minutes before`;
+            });
+
+            const destinationAlarmSlider = document.getElementById('destination-alarm-slider');
+            const destinationAlarmTimeDisplay = document.getElementById('destination-alarm-time-display');
+            destinationAlarmSlider.addEventListener('input', (event) => {
+                destinationAlarmTimeDisplay.textContent = `${event.target.value} minutes before`;
+            });
+
+            const inputsToValidate = [
+                document.getElementById('from-station'),
+                document.getElementById('to-station'),
+                document.getElementById('tt-from-station'),
+                document.getElementById('tt-to-station')
+            ];
+
+            inputsToValidate.forEach(input => {
+                if (input) {
+                    input.addEventListener('input', () => {
+                        input.classList.remove('border-red-500', 'ring-2', 'ring-red-400');
+                    });
+                }
+            });
+        });
+
+        const mockSchedules = [
+            { id: "CD01/2", departure: "06:15", arrival: "08:10", depot: "STEEL CITY", type: "CITY ORDINARY", vehicleNo: "AP31Z0384", lastStation: "CHODAVARAM", status: "Yet to start" },
+            { id: "CD02/2", departure: "17:30", arrival: "19:20", depot: "STEEL CITY", type: "EXPRESS", vehicleNo: "AP32A1234", lastStation: "RTC COMPLEX", status: "On Time" },
+            { id: "CD03/2", departure: "18:15", arrival: "20:05", depot: "STEEL CITY", type: "SUPER LUXURY", vehicleNo: "AP33B5678", lastStation: "VISAKHAPATNAM", status: "On Time" },
+            { id: "CD04/2", departure: "19:00", arrival: "06:30", depot: "GNT-1", type: "EXPRESS", vehicleNo: "AP34C9012", lastStation: "Anantapur", status: "Delayed" },
+            { id: "CD05/2", departure: "21:30", arrival: "05:15", depot: "VJA-PNBS", type: "SUPER LUXURY", vehicleNo: "AP35D3456", lastStation: "Tirupati", status: "On Time" },
+            { id: "CD06/2", departure: "23:15", arrival: "01:20", depot: "STEEL CITY", type: "CITY ORDINARY", vehicleNo: "AP36E7890", lastStation: "RTC COMPLEX", status: "Yet to start" }
+        ];
+
+        const mockTripStops = {
+            "CD01/2": [
+                { stopName: "SCINDIA", arrival: "Source", departure: "06:15" },
+                { stopName: "Mindi", arrival: "06:22", departure: "06:22" },
+                { stopName: "BHPV", arrival: "06:30", departure: "06:30" },
+                { stopName: "Sheela Nagar", arrival: "06:40", departure: "06:40" },
+                { stopName: "Old Gajuwaka", arrival: "06:50", departure: "06:50" },
+                { stopName: "Lankelapalem", arrival: "07:05", departure: "07:05" },
+                { stopName: "Anakapalle", arrival: "07:25", departure: "07:30" },
+                { stopName: "Munagapaka", arrival: "07:45", departure: "07:45" },
+                { stopName: "Kasimkota", arrival: "07:55", departure: "07:55" },
+                { stopName: "CHODAVARAM", arrival: "08:10", departure: "Destination" }
+            ],
+            "CD02/2": [
+                { stopName: "STEEL CITY", arrival: "Source", departure: "17:30" },
+                { stopName: "Kurmannapalem", arrival: "17:40", departure: "17:40" },
+                { stopName: "Aganampudi", arrival: "17:48", departure: "17:48" },
+                { stopName: "New Gajuwaka", arrival: "17:55", departure: "17:55" },
+                { stopName: "Old Gajuwaka", arrival: "18:02", departure: "18:02" },
+                { stopName: "Airport", arrival: "18:15", departure: "18:15" },
+                { stopName: "NAD Kotha Road", arrival: "18:30", departure: "18:30" },
+                { stopName: "Kancharapalem", arrival: "18:50", departure: "18:50" },
+                { stopName: "Akkayyapalem", arrival: "19:05", departure: "19:05" },
+                { stopName: "RTC COMPLEX", arrival: "19:20", departure: "Destination" }
+            ],
+            "CD03/2": [ 
+                { stopName: "STEEL CITY", arrival: "Source", departure: "18:15" }, 
+                { stopName: "GAJUWAKA", arrival: "18:45", departure: "18:50" },
+                { stopName: "RTC COMPLEX", arrival: "19:30", departure: "19:35" },
+                { stopName: "MADDILAPALEM", arrival: "19:50", departure: "19:50" },
+                { stopName: "VISAKHAPATNAM", arrival: "20:05", departure: "Destination" } 
+            ],
+            "CD04/2": [
+                { stopName: "Guntur", arrival: "Source", departure: "19:00" },
+                { stopName: "Narasaraopet", arrival: "19:50", departure: "19:55" },
+                { stopName: "Vinukonda", arrival: "20:45", departure: "20:50" },
+                { stopName: "Markapur", arrival: "22:00", departure: "22:05" },
+                { stopName: "Giddalur", arrival: "22:55", departure: "23:00" },
+                { stopName: "Nandyal", arrival: "00:30", departure: "00:40" },
+                { stopName: "Kurnool", arrival: "02:30", departure: "02:45" },
+                { stopName: "Dhone", arrival: "03:45", departure: "03:50" },
+                { stopName: "Gooty", arrival: "04:50", departure: "04:55" },
+                { stopName: "Pamidi", arrival: "05:30", departure: "05:32" },
+                { stopName: "Anantapur", arrival: "06:30", departure: "Destination" }
+            ],
+            "CD05/2": [
+                { stopName: "Vijayawada", arrival: "Source", departure: "21:30" },
+                { stopName: "Guntur", arrival: "22:10", departure: "22:15" },
+                { stopName: "Chilakaluripet", arrival: "22:55", departure: "22:57" },
+                { stopName: "Ongole", arrival: "23:50", departure: "23:55" },
+                { stopName: "Kavali", arrival: "00:50", departure: "00:52" },
+                { stopName: "Nellore", arrival: "01:45", departure: "01:50" },
+                { stopName: "Gudur", arrival: "02:30", departure: "02:35" },
+                { stopName: "Srikalahasti", arrival: "03:35", departure: "03:40" },
+                { stopName: "Renigunta", arrival: "04:10", departure: "04:15" },
+                { stopName: "Tirupati", arrival: "05:15", departure: "Destination" }
+            ],
+            "CD06/2": [ 
+                { stopName: "STEEL CITY", arrival: "Source", departure: "23:15" }, 
+                { stopName: "Kurmannapalem", arrival: "23:25", departure: "23:25" },
+                { stopName: "Aganampudi", arrival: "23:32", departure: "23:32" },
+                { stopName: "New Gajuwaka", arrival: "23:40", departure: "23:45" },
+                { stopName: "Old Gajuwaka", arrival: "23:52", departure: "23:52" },
+                { stopName: "Zinc Gate", arrival: "00:05", departure: "00:05" },
+                { stopName: "Malkapuram", arrival: "00:20", departure: "00:20" },
+                { stopName: "Scindia", arrival: "00:35", departure: "00:35" },
+                { stopName: "RTC COMPLEX", arrival: "01:20", departure: "Destination" } 
+            ]
+        };
+
+        function generateScheduleCard(schedule, from, to) {
+            const routeText = (from && to && from !== 'Service') ? `${from.toUpperCase()} - ${to.toUpperCase()}` : 'Selected Route';
+            let badgeText = schedule.type.replace('CITY ', '');
+            let badgeClass = 'schedule-type-badge';
+            if (badgeText.toLowerCase().includes('express')) badgeClass += ' express';
+            else if (badgeText.toLowerCase().includes('luxury')) badgeClass += ' super-luxury';
+
+            return `
+            <div class="bg-card rounded-lg shadow-md flex overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 dark:border-gray-700 cursor-pointer" onclick="showTripDetailsPage('${schedule.id}')">
+                <div class="schedule-card-bar flex-shrink-0"></div>
+                <div class="p-4 flex-grow flex justify-between items-center space-x-4">
+                    <div class="flex-grow">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="bus" class="w-5 h-5 text-violet-500"></i>
+                            <span class="font-bold text-base text-primary">Service No : ${schedule.id}</span>
+                        </div>
+                        <p class="font-semibold text-lg text-gray-800 dark:text-gray-200 mt-1">${routeText}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Depot Name: ${schedule.depot}</p>
+                        <div class="flex space-x-8 mt-3 items-center">
+                             <div class="text-xs text-gray-600 dark:text-gray-400">
+                                <p>Schedule Departure</p>
+                                <p>Schedule Arrival</p>
+                            </div>
+                            <div class="text-right font-mono font-semibold text-primary text-base">
+                                <p>${schedule.departure}</p>
+                                <p>${schedule.arrival}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end justify-between self-stretch text-right">
+                        <span class="${badgeClass}">${badgeText}</span>
+                        <i data-lucide="chevron-right" class="w-6 h-6 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function generateScheduleCards(from, to) {
+            const listContainer = document.getElementById('schedule-list');
+            if (!listContainer) return;
+            const now = new Date();
+            const upcomingSchedules = mockSchedules.filter(s => {
+                const [hours, minutes] = s.departure.split(':').map(Number);
+                const tripTime = new Date();
+                tripTime.setHours(hours, minutes, 0, 0);
+                return tripTime > now;
+            });
+            const schedulesToRender = activeTab === 'general' ? mockSchedules : upcomingSchedules;
+            if (schedulesToRender.length > 0) {
+                listContainer.innerHTML = schedulesToRender.map(schedule => generateScheduleCard(schedule, from, to)).join('');
+            } else {
+                 listContainer.innerHTML = `
+                    <div class="bg-card p-8 rounded-xl shadow-md text-center">
+                        <i data-lucide="bus-front" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-primary">No Upcoming Trips</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">There are no more trips scheduled for this route today. Please check the general schedule for all timings.</p>
+                    </div>`;
+            }
+            lucide.createIcons();
+        }
+
+        function showShareModal() {
+            if (!currentScheduleDetails) return;
+            const content = document.getElementById('share-details-content');
+            
+            const from = lastFromStation || (stops.length > 0 ? stops[0].stopName : 'N/A');
+            const to = lastToStation || (stops.length > 0 ? stops[stops.length - 1].stopName : 'N/A');
+
+            const sharedDate = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g, '-');
+
+            content.innerHTML = `
+                <div class="py-3">
+                    <p class="text-blue-600 dark:text-blue-400 font-semibold">I am travelling in ${currentScheduleDetails.id}</p>
+                </div>
+                <div class="py-3">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">From</p>
+                    <p class="font-medium">${from}</p>
+                </div>
+                <div class="py-3">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">To</p>
+                    <p class="font-medium">${to}</p>
+                </div>
+                <div class="py-3 grid grid-cols-2">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Vehicle No</p>
+                        <p class="font-medium">${currentScheduleDetails.vehicleNo}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Shared On</p>
+                        <p class="font-medium">${sharedDate}</p>
+                    </div>
+                </div>
+                <div class="py-3">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Last Station</p>
+                    <p class="font-medium">${currentScheduleDetails.lastStation}</p>
+                </div>
+                <div class="py-3">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                    <p class="font-medium">${currentScheduleDetails.status}</p>
+                </div>
+            `;
+            shareModal.classList.remove('hidden');
+            setTimeout(() => {
+                shareModal.querySelector('.modal-overlay').classList.remove('opacity-0');
+                shareModal.querySelector('.modal-content').classList.remove('scale-95');
+                shareModal.querySelector('.modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function hideShareModal() {
+             shareModal.querySelector('.modal-overlay').classList.add('opacity-0');
+             shareModal.querySelector('.modal-content').classList.add('scale-95');
+             shareModal.querySelector('.modal-content').classList.remove('scale-100');
+            setTimeout(() => shareModal.classList.add('hidden'), 300);
+        }
+
+        function handleShare(platform) {
+            if (!currentScheduleDetails) return;
+
+            const from = lastFromStation || 'N/A';
+            const to = lastToStation || 'N/A';
+
+            const shareText = `Hi, I am travelling in bus service ${currentScheduleDetails.id} (${currentScheduleDetails.vehicleNo}) from ${from} to ${to}. Current status is: ${currentScheduleDetails.status}. Last known station: ${currentScheduleDetails.lastStation}.`;
+
+            if (platform === 'more' && navigator.share) {
+                navigator.share({
+                    title: 'Bus Trip Details',
+                    text: shareText,
+                })
+                .then(() => console.log('Successful share'))
+                .catch((error) => console.log('Error sharing', error));
+            } else if (platform === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+            } else if (platform === 'sms') {
+                 window.open(`sms:?body=${encodeURIComponent(shareText)}`, '_blank');
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(shareText).then(() => {
+                    simulateAction('Details copied to clipboard!');
+                });
+            }
+            hideShareModal();
+        }
+
+    </script>
+</body>
+</html>
